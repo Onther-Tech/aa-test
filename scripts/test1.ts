@@ -14,13 +14,17 @@ import { Command } from 'commander'
 import { erc4337RuntimeVersion } from '@account-abstraction/utils'
 import fs from 'fs'
 import { DeterministicDeployer, HttpRpcClient, SimpleAccountAPI } from '@account-abstraction/sdk'
-import Artifact__TokenPaymaster from '@account-abstraction/contracts/artifacts/TokenPaymaster.json'
+//import Artifact__TokenPaymaster from '@account-abstraction/contracts/artifacts/TokenPaymaster.json'
+import Artifact__FeePaymaster from '../artifacts/contracts/FeePaymaster.sol/FeePaymaster.json'
+import { fillAndSign } from '../helper/UserOp'
+import { createAccount, createAccountOwner, deployEntryPoint } from '../helper/testutils'
 
 const ENTRY_POINT = '0x1306b01bc3e4ad202612d3843387e94737673f53'
 
 class Runner {
   bundlerProvider!: HttpRpcClient
   accountApi!: SimpleAccountAPI
+  accountDeployer!: string
 
   /**
    *
@@ -47,10 +51,11 @@ class Runner {
     const net = await this.provider.getNetwork()
     const chainId = net.chainId
     const dep = new DeterministicDeployer(this.provider)
-    const accountDeployer = await dep.getDeterministicDeployAddress(new SimpleAccountFactory__factory(), 0, [this.entryPointAddress])
-    if (!await dep.isContractDeployed(accountDeployer)) {
+    this.accountDeployer = await dep.getDeterministicDeployAddress(new SimpleAccountFactory__factory(), 0, [this.entryPointAddress])
+    // const accountDeployer = await new SimpleAccountFactory__factory(this.provider.getSigner()).deploy().then(d=>d.address)
+    if (!await dep.isContractDeployed(this.accountDeployer)) {
       if (deploymentSigner == null) {
-        console.log(`AccountDeployer not deployed at ${accountDeployer}. run with --deployFactory`)
+        console.log(`AccountDeployer not deployed at ${this.accountDeployer}. run with --deployFactory`)
         process.exit(1)
       }
       const dep1 = new DeterministicDeployer(deploymentSigner.provider as any)
@@ -60,11 +65,11 @@ class Runner {
     this.accountApi = new SimpleAccountAPI({
       provider: this.provider,
       entryPointAddress: this.entryPointAddress,
-      factoryAddress: accountDeployer,
+      factoryAddress: this.accountDeployer,
       owner: this.accountOwner,
       index: this.index,
       overheads: {
-        // perUserOp: 100000
+        perUserOp: 100000
       }
     })
     return this
@@ -110,7 +115,8 @@ async function main (): Promise<void> {
   const opts = program.parse().opts()
   const provider = getDefaultProvider(opts.network) as JsonRpcProvider
   let signer: Signer
-  const deployFactory: boolean = opts.deployFactory
+  //const deployFactory: boolean = opts.deployFactory
+  let deployFactory: boolean
   try {
     const accounts = await provider.listAccounts()
     if (accounts.length === 0) {
@@ -119,7 +125,7 @@ async function main (): Promise<void> {
     }
     // for hardhat/node, use account[0]
     signer = provider.getSigner()
-    // deployFactory = true
+    deployFactory = true
   } catch (e) {
     throw new Error('must specify --mnemonic')
   }
@@ -208,6 +214,46 @@ async function main (): Promise<void> {
   console.log(`value3: ${value3}`)
 
   console.log('after run3')
+
+
+  const entryPoint = await deployEntryPoint()
+
+  const Factory__FeePaymaster = await ethers.getContractFactory(
+    Artifact__FeePaymaster.abi,
+    Artifact__FeePaymaster.bytecode,
+    signer
+  )
+
+  const feePaymaster = await Factory__FeePaymaster.deploy(
+    client.accountDeployer,
+    'TestPaymaster',
+    client.entryPointAddress,
+    '0x0000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000',
+    'TEST'
+  )
+  await feePaymaster.deployed()
+
+
+
+  const data3calldata = sampleContract.interface.encodeFunctionData('set', [3])
+  const data3 = await client.accountApi.encodeExecute(sampleContract.address, 0, data3calldata)
+
+  const { proxy: aAccount } = await createAccount(signer, await accountOwner.getAddress(), entryPoint.address)
+  await feePaymaster.mint(aAccount.address, parseEther('1'), {gasLimit: 500000})
+  const op = await fillAndSign({
+    sender: aAccount.address,
+    callData: data3,
+    paymasterAndData: feePaymaster.address,
+    nonce: 1
+  }, accountOwner, entryPoint)
+
+  const other = Wallet.createRandom()
+  await entryPoint.handleOps([op], other.address, {gasLimit: 5000000}).then(async tx => tx.wait())
+
+  const value4 = await sampleContract.get()
+  console.log(`value4: ${value4}`)
+  console.log('after run4')
 }
 
 void main()
