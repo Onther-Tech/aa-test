@@ -8,13 +8,12 @@
 import { BigNumber, ContractFactory, getDefaultProvider, Signer, Wallet } from 'ethers'
 import { ethers } from 'hardhat'
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { SimpleAccountFactory__factory } from '@account-abstraction/contracts'
-import { formatEther, keccak256, parseEther } from 'ethers/lib/utils'
+import { SimpleAccountFactory__factory, UserOperationStruct } from '@account-abstraction/contracts'
+import { formatEther, keccak256, parseEther, hexlify } from 'ethers/lib/utils'
 import { Command } from 'commander'
 import { erc4337RuntimeVersion } from '@account-abstraction/utils'
 import fs from 'fs'
 import { DeterministicDeployer, HttpRpcClient, SimpleAccountAPI } from '@account-abstraction/sdk'
-//import Artifact__TokenPaymaster from '@account-abstraction/contracts/artifacts/TokenPaymaster.json'
 import Artifact__FeePaymaster from '../artifacts/contracts/FeePaymaster.sol/FeePaymaster.json'
 import { fillAndSign } from '../helper/UserOp'
 import { createAccount, createAccountOwner, deployEntryPoint } from '../helper/testutils'
@@ -131,8 +130,9 @@ async function main (): Promise<void> {
   }
   const accountOwner = new Wallet('0x'.padEnd(66, '7'))
 
+  const entryPoint = await deployEntryPoint()
   const index = Date.now()
-  const client = await new Runner(provider, opts.bundlerUrl, accountOwner, opts.entryPoint, index).init(deployFactory ? signer : undefined)
+  const client = await new Runner(provider, opts.bundlerUrl, accountOwner, entryPoint.address, index).init(deployFactory ? signer : undefined)
 
   const addr = await client.getAddress()
 
@@ -216,7 +216,7 @@ async function main (): Promise<void> {
   console.log('after run3')
 
 
-  const entryPoint = await deployEntryPoint()
+  //const entryPoint = await deployEntryPoint()
 
   const Factory__FeePaymaster = await ethers.getContractFactory(
     Artifact__FeePaymaster.abi,
@@ -235,21 +235,79 @@ async function main (): Promise<void> {
   await feePaymaster.deployed()
 
 
-
   const data3calldata = sampleContract.interface.encodeFunctionData('set', [3])
   const data3 = await client.accountApi.encodeExecute(sampleContract.address, 0, data3calldata)
 
   const { proxy: aAccount } = await createAccount(signer, await accountOwner.getAddress(), entryPoint.address)
-  await feePaymaster.mint(aAccount.address, parseEther('1'), {gasLimit: 500000})
-  const op = await fillAndSign({
-    sender: aAccount.address,
-    callData: data3,
-    paymasterAndData: feePaymaster.address,
-    nonce: 1
-  }, accountOwner, entryPoint)
+  await feePaymaster.mint(aAccount.address, parseEther('100000000000'), {gasLimit: 500000})
+  await feePaymaster.mint(client.accountApi.getAccountAddress(), parseEther('100000000000'), {gasLimit: 500000})
 
-  const other = Wallet.createRandom()
-  await entryPoint.handleOps([op], other.address, {gasLimit: 5000000}).then(async tx => tx.wait())
+  await entryPoint.depositTo(feePaymaster.address, { value: parseEther('1000') })
+  await feePaymaster.stake({
+    value: parseEther('1000'),
+    gasLimit: 100000
+  })
+  await feePaymaster.deposit({
+    value: parseEther('1000'),
+    gasLimit: 100000
+  })
+
+  // TEST print
+  const depositInfo = await entryPoint.deposits(feePaymaster.address)
+  console.log(`depositInfo: ${JSON.stringify(depositInfo)}`)
+
+  const paymasterAndData = feePaymaster.address
+
+
+  const {
+    callData,
+    callGasLimit
+  } = await client.accountApi.encodeUserOpCallDataAndGasLimit({
+    target: sampleContract.address,
+    data: sampleContract.interface.encodeFunctionData('set', ['3'])
+  })
+  const initCode = await client.accountApi.getInitCode()
+  const initGas = await client.accountApi.estimateCreationGas(initCode)
+  const verificationGasLimit = BigNumber.from(await client.accountApi.getVerificationGasLimit()).add(initGas)
+
+  const feeData = await client.accountApi.provider.getFeeData()
+  const maxFeePerGas = feeData.maxFeePerGas ?? undefined
+  const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? undefined
+
+  let partialUserOp: any = {
+    sender: client.accountApi.getAccountAddress(),
+    nonce: client.accountApi.getNonce(),
+    initCode,
+    callData,
+    callGasLimit,
+    verificationGasLimit,
+    maxFeePerGas,
+    maxPriorityFeePerGas
+  }
+  partialUserOp.paymasterAndData = feePaymaster.address
+  partialUserOp.preVerificationGas = client.accountApi.getPreVerificationGas(partialUserOp)
+  partialUserOp.signature = ''
+
+  const unsignedUserOp: UserOperationStruct = {
+    ...partialUserOp
+  }
+  const signedUserOp = await client.accountApi.signUserOp(unsignedUserOp)
+
+  const balanceEth1 = await getBalance(await client.accountApi.getAccountAddress())
+  const balanceToken1 = await feePaymaster.balanceOf(await client.accountApi.getAccountAddress())
+
+  const userOpHash = await client.bundlerProvider.sendUserOpToBundler(signedUserOp)
+  const txid = await client.accountApi.getUserOpReceipt(userOpHash)
+  console.log('reqId', userOpHash, 'txid=', txid)
+
+
+  const balanceEth2 = await getBalance(await client.accountApi.getAccountAddress())
+  const balanceToken2 = await feePaymaster.balanceOf(await client.accountApi.getAccountAddress())
+
+  console.log(`@ balanceEth1: ${balanceEth1}`)
+  console.log(`@ balanceEth2: ${balanceEth2}`)
+  console.log(`@ balanceToken1: ${balanceToken1}`)
+  console.log(`@ balanceToken2: ${balanceToken2}`)
 
   const value4 = await sampleContract.get()
   console.log(`value4: ${value4}`)

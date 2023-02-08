@@ -85,6 +85,10 @@ contract FeePaymaster is BasePaymaster, IL2StandardERC20, ERC20 {
         return valueEth / 100;
     }
 
+    function stake() public payable {
+        entryPoint.addStake{value : msg.value}(2);
+    }
+
     /**
       * validate the request:
       * if this is a constructor call, make sure it is a known account (that is, a contract that
