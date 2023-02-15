@@ -4,8 +4,10 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@eth-optimism/contracts/standards/IL2StandardERC20.sol";
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
+import "./iFeeTokenPriceOracle.sol";
+import "./FeeTokenPriceOracle.sol";
 
-contract FeePaymaster is BasePaymaster, IL2StandardERC20, ERC20 {
+contract FeePaymaster is BasePaymaster, IL2StandardERC20, ERC20, FeeTokenPriceOracle {
 
     //calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
@@ -27,6 +29,8 @@ contract FeePaymaster is BasePaymaster, IL2StandardERC20, ERC20 {
 
         l1Token = _l1Token;
         l2Bridge = _l2Bridge;
+
+        super.initialize(address(this), 0x0000000000000000000000000000000000000000);
     }
 
     /**
@@ -81,8 +85,8 @@ contract FeePaymaster is BasePaymaster, IL2StandardERC20, ERC20 {
 
     //TODO: this method assumes a fixed ratio of token-to-eth. subclass should override to supply oracle
     // or a setter.
-    function getTokenValueOfEth(uint256 valueEth) internal view virtual returns (uint256 valueToken) {
-        return valueEth / 100;
+    function getTokenValueOfEth(uint256 valueEth) internal view virtual override returns (uint256 valueToken) {
+        return super.getTokenValueOfEth(valueEth);
     }
 
     function stake() public payable {

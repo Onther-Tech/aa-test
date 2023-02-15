@@ -215,9 +215,6 @@ async function main (): Promise<void> {
 
   console.log('after run3')
 
-
-  //const entryPoint = await deployEntryPoint()
-
   const Factory__FeePaymaster = await ethers.getContractFactory(
     Artifact__FeePaymaster.abi,
     Artifact__FeePaymaster.bytecode,
@@ -233,7 +230,6 @@ async function main (): Promise<void> {
     'TEST'
   )
   await feePaymaster.deployed()
-
 
   const data3calldata = sampleContract.interface.encodeFunctionData('set', [3])
   const data3 = await client.accountApi.encodeExecute(sampleContract.address, 0, data3calldata)
@@ -252,7 +248,6 @@ async function main (): Promise<void> {
     gasLimit: 100000
   })
 
-  // TEST print
   const depositInfo = await entryPoint.deposits(feePaymaster.address)
   console.log(`depositInfo: ${JSON.stringify(depositInfo)}`)
 
