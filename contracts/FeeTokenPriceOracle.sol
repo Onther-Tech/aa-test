@@ -2,6 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@eth-optimism/contracts/L2/messaging/IL2ERC20Bridge.sol";
+import "@eth-optimism/contracts/libraries/constants/Lib_PredeployAddresses.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import "./iFeeTokenPriceOracle.sol";
 import "./OVM_GasPriceOracle.sol";
@@ -46,14 +48,12 @@ contract FeeTokenPriceOracle is iFeeTokenPriceOracle, Ownable {
     }
 
     function withdrawToken() public onlyOwner {
-        /*
-        L2StandardBridge(Lib_PredeployAddresses.L2_STANDARD_BRIDGE).withdrawTo(
+        IL2ERC20Bridge(Lib_PredeployAddresses.L2_STANDARD_BRIDGE).withdrawTo(
             feeToken,
             l1FeeWallet,
             IERC20(feeToken).balanceOf(address(this)),
             0,
             bytes("")
         );
-        */
     }
 }
