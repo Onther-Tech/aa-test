@@ -15,9 +15,19 @@ export class Create2Factory {
   static readonly deploymentGasLimit = 100000
   static readonly factoryDeploymentFee = (Create2Factory.deploymentGasPrice * Create2Factory.deploymentGasLimit).toString()
 
+ /*
+  // for chainId=5050, Titan
+  static readonly contractAddress = '0x1431517b50f69bf710cc63beef9f83af03fa1be6'
+  static readonly factoryTx = '0xf8a3808303d090830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222'
+  static readonly factoryDeployer = '0x21d88d1cee7424f53b2dfe1547229608cc859f50'
+  static readonly deploymentGasPrice = 250000
+  static readonly deploymentGasLimit = 100000
+  static readonly factoryDeploymentFee = (Create2Factory.deploymentGasPrice * Create2Factory.deploymentGasLimit).toString()
+*/
   constructor (readonly provider: Provider,
     readonly signer = (provider as ethers.providers.JsonRpcProvider).getSigner()) {
   }
+
 
   /**
    * deploy a contract using our deterministic deployer.
@@ -35,6 +45,7 @@ export class Create2Factory {
     }
 
     const addr = Create2Factory.getDeployedAddress(initCode, salt)
+
     if (await this.provider.getCode(addr).then(code => code.length) > 2) {
       return addr
     }
@@ -46,7 +57,6 @@ export class Create2Factory {
     if (gasLimit === 'estimate') {
       gasLimit = await this.signer.estimateGas(deployTx)
     }
-
     // manual estimation (its bit larger: we don't know actual deployed code size)
     if (gasLimit === undefined) {
       gasLimit = arrayify(initCode)
@@ -63,6 +73,7 @@ export class Create2Factory {
 
     const ret = await this.signer.sendTransaction({ ...deployTx, gasLimit })
     await ret.wait()
+
     if (await this.provider.getCode(addr).then(code => code.length) === 2) {
       throw new Error('failed to deploy')
     }
@@ -98,11 +109,15 @@ export class Create2Factory {
     if (await this._isFactoryDeployed()) {
       return
     }
-    await (signer ?? this.signer).sendTransaction({
+
+    let tx = await (signer ?? this.signer).sendTransaction({
       to: Create2Factory.factoryDeployer,
       value: BigNumber.from(Create2Factory.factoryDeploymentFee)
     })
+    await tx.wait();
+
     await this.provider.sendTransaction(Create2Factory.factoryTx)
+
     if (!await this._isFactoryDeployed()) {
       throw new Error('fatal: failed to deploy deterministic deployer')
     }
@@ -111,6 +126,7 @@ export class Create2Factory {
   async _isFactoryDeployed (): Promise<boolean> {
     if (!this.factoryDeployed) {
       const deployed = await this.provider.getCode(Create2Factory.contractAddress)
+
       if (deployed.length > 2) {
         this.factoryDeployed = true
       }
