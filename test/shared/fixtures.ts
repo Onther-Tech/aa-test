@@ -18,7 +18,7 @@ import { OracleLibrary  } from '../../typechain-types/contracts/libraries/Oracle
 
 export const tokamakFixtures = async function (): Promise<TokamakFixture> {
     const [deployer, addr1, addr2 ] = await ethers.getSigners();
-    const { tonAddress, uniswapV3FactoryAddress } = await hre.getNamedAccounts();
+    const { tonAddress, uniswapV3FactoryAddress, wethAddress } = await hre.getNamedAccounts();
 
     // await ethers.provider.send("hardhat_setBalance", [
     //   deployer.address,
@@ -76,7 +76,8 @@ export const tokamakFixtures = async function (): Promise<TokamakFixture> {
       ton: ton,
       tokamakOracle : tokamakOracle,
       oracleLibrary: oracleLibrary,
-      uniswapV3FactoryAddress: uniswapV3FactoryAddress
+      uniswapV3FactoryAddress: uniswapV3FactoryAddress,
+      wethAddress: wethAddress
   }
 }
 

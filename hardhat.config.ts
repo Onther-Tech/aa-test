@@ -61,8 +61,16 @@ const config: HardhatUserConfig = {
     deployer: 0,
     addr1: 1,
     addr2: 2,
-    tonAddress: {
+    wethAddress: {
       default: 3,
+      hardhat: '0x4200000000000000000000000000000000000006',
+      mainnet: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      goerli: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+      titan: '0x4200000000000000000000000000000000000006',
+      titangoerli: '0x4200000000000000000000000000000000000006',
+    },
+    tonAddress: {
+      default: 4,
       hardhat: '0xfa956eb0c4b3e692ad5a6b2f08170ade55999aca',
       mainnet: '0x2be5e8c109e2197D077D13A82dAead6a9b3433C5',
       goerli: '0x68c1F9620aeC7F2913430aD6daC1bb16D8444F00',
@@ -70,7 +78,7 @@ const config: HardhatUserConfig = {
       titangoerli: '0xfa956eb0c4b3e692ad5a6b2f08170ade55999aca',
     },
     tosAddress: {
-      default: 4,
+      default: 5,
       hardhat: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
       mainnet: '0x409c4D8cd5d2924b9bc5509230d16a61289c8153',
       goerli: '0x67F3bE272b1913602B191B3A68F7C238A2D81Bb9',
@@ -78,7 +86,7 @@ const config: HardhatUserConfig = {
       titangoerli: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
     },
     uniswapV3FactoryAddress: {
-      default: 5,
+      default: 6,
       hardhat: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
       mainnet: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       goerli: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -86,29 +94,29 @@ const config: HardhatUserConfig = {
       titangoerli: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
     },
     l1MessengerAddress: {
-      default: 6,
+      default: 7,
       goerli: '0x2878373BA3Be0Ef2a93Ba5b3F7210D76cb222e63',
       hardhat: '0x2878373BA3Be0Ef2a93Ba5b3F7210D76cb222e63',
     },
     l2MessengerAddress: {
-      default: 7,
+      default: 8,
       titan: '0x4200000000000000000000000000000000000007',
       titan_goerli: '0x4200000000000000000000000000000000000007',
       hardhat: '0x4200000000000000000000000000000000000007',
     },
     l1BridgeAddress: {
-      default: 8,
+      default: 9,
       goerli: '0x7377F3D0F64d7a54Cf367193eb74a052ff8578FD',
       hardhat: '0x7377F3D0F64d7a54Cf367193eb74a052ff8578FD',
     },
     l2BridgeAddress: {
-      default: 9,
+      default: 10,
       titan: '0x4200000000000000000000000000000000000010',
       titan_goerli: '0x4200000000000000000000000000000000000010',
       hardhat: '0x4200000000000000000000000000000000000010',
     },
     l1AddressManagerAddress: {
-      default: 10,
+      default: 11,
       goerli: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
       hardhat: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
     },

@@ -23,6 +23,7 @@
     "@typechain/hardhat": "^6.1.5",
     "@types/chai": "^4.2.21",
     "@types/node": "^16.4.12",
+    "bignumber.js": "^9.1.1",
     "chai": "^4.3.4",
     "dotenv": "^16.0.3",
     "ethereum-waffle": "^3.4.0",

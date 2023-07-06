@@ -4,6 +4,9 @@ import { ethers, network } from 'hardhat'
 import { Signer } from 'ethers'
 import { tokamakFixtures } from './shared/fixtures'
 import { TokamakFixture } from './shared/fixtureInterfaces'
+import { FeeAmount, encodePath } from "./shared/utils"
+import { bytes } from './solidityTypes'
+
 
 describe('3.TokamakOracle.test', () => {
     let deployer: Signer, addr1: Signer, addr2:Signer;
@@ -59,44 +62,59 @@ describe('3.TokamakOracle.test', () => {
                 priceTon, priceTos
                 )).wait()
 
-            expect(await deployed.tokamakOracle.ton()).to.be.eq(deployed.ton.address)
-            expect(await deployed.tokamakOracle.oracleLibrary()).to.be.eq(deployed.oracleLibrary.address)
-            expect(await deployed.tokamakOracle.uniswapV3Factory()).to.be.eq(deployed.uniswapV3FactoryAddress)
+            expect(await deployed.tokamakOracle.fixedPriceTONPerETH()).to.be.eq(
+                priceTon)
+            expect(await deployed.tokamakOracle.fixedPriceTOSPerETH()).to.be.eq(
+                priceTos)
 
         });
     })
 
     describe('# addTokenPricePaths', () => {
         it('onlyOwner : revert ', async () => {
-            const priceTon = ethers.utils.parseEther("1000")
-            const priceTos = ethers.utils.parseEther("800")
 
-            await expect(deployed.tokamakOracle.connect(addr1).setFixedPrice(
-                priceTon, priceTos
+            const weth_ton_path = encodePath(
+                [deployed.wethAddress, deployed.ton.address], [FeeAmount.MEDIUM])
+
+
+            await expect(deployed.tokamakOracle.connect(addr1).addTokenPricePaths(
+                deployed.ton.address, [weth_ton_path]
                 )).to.be.revertedWith("Ownable: caller is not the owner")
 
         });
 
-        it('onlyOwner', async () => {
+        it('onlyOwner register ton as fee token.', async () => {
+
+            let paths = await deployed.tokamakOracle.viewTokenPricePaths(deployed.ton.address);
+            expect(paths.length).to.be.eq(0)
+
+            const weth_ton_path = encodePath(
+                [deployed.wethAddress, deployed.ton.address], [FeeAmount.MEDIUM])
+
+            await (await deployed.tokamakOracle.connect(deployer).addTokenPricePaths(
+                deployed.ton.address, [weth_ton_path]
+                )).wait()
+
+            let paths1 = await deployed.tokamakOracle.viewTokenPricePaths(deployed.ton.address);
+
+            expect(paths1.length).to.be.eq(1)
+            expect(paths1[paths1.length-1]).to.be.eq(weth_ton_path)
+
+        });
+
+    })
+
+    describe('# getTokenValueOfEth', () => {
+        it('getTokenValueOfEth', async () => {
+            const fixedPriceTONPerETH = await deployed.tokamakOracle.fixedPriceTONPerETH()
+            let amount = ethers.BigNumber.from("10000")
+            let amountTon = await deployed.tokamakOracle["getTokenValueOfEth(uint256)"](amount);
+            let calcAmountTon = fixedPriceTONPerETH.mul(amount).div(ethers.utils.parseEther("1"));
+
+            expect(amountTon).to.be.eq(calcAmountTon)
 
         });
     })
-
-    // describe('# setPoolPathes', () => {
-
-    //     it('create non mint-able token', async () => {
-
-    //     });
-
-    // });
-
-    // describe('# getTokenValueOfEth', () => {
-
-    //     it('create non mint-able token', async () => {
-
-    //     });
-
-    // });
 
 });
 

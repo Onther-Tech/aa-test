@@ -6,6 +6,7 @@ import "../interfaces/IOracle.sol";
 import "../interfaces/IL2StandardERC20.sol";
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "hardhat/console.sol";
 
 interface IIOracleLibrary {
     function getOutAmountsCurTick(address factory, bytes memory _path, uint256 _amountIn)
@@ -72,7 +73,7 @@ contract TokamakOracle is Ownable, IOracle {
         bytes[] calldata pathes
     ) public nonZeroAddress(feeToken) onlyOwner {
         if (pricePaths[feeToken].length != 0)  delete pricePaths[feeToken];
-        pricePaths[feeToken] = new bytes[](pathes.length);
+
         for (uint256 i = 0; i < pathes.length; i++){
             if (pathes[i].length > 0) {
                 pricePaths[feeToken].push(pathes[i]);
@@ -110,7 +111,7 @@ contract TokamakOracle is Ownable, IOracle {
     // }
 
     function getTokenValueOfEth(uint256 ethOutput) external view virtual override returns (uint256 tokenInput){
-        return fixedPriceTONPerETH * ethOutput / 1e18 ;
+        tokenInput = fixedPriceTONPerETH * ethOutput / 1e18;
     }
 
 }

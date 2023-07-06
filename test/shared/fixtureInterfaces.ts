@@ -23,7 +23,8 @@ interface TokamakFixture  {
     ton: IL2StandardERC20,
     tokamakOracle : TokamakOracle,
     oracleLibrary: OracleLibrary,
-    uniswapV3FactoryAddress: string
+    uniswapV3FactoryAddress: string,
+    wethAddress: string
 }
 
 export { TokamakFixture }
