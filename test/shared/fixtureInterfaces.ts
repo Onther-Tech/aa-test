@@ -8,6 +8,7 @@ import { TokamakAccount  } from '../../typechain-types/contracts/TokamakAccount'
 import { TestToken  } from '../../typechain-types/contracts/test/TestToken'
 import { IL2StandardERC20  } from '../../typechain-types/contracts/interfaces/IL2StandardERC20'
 import { TokamakOracle  } from '../../typechain-types/contracts/oracle/TokamakOracle.sol'
+import { OracleLibrary  } from '../../typechain-types/contracts/libraries/OracleLibrary.sol'
 
 interface TokamakFixture  {
     tokamakEntryPoint: TokamakEntryPoint,
@@ -20,7 +21,9 @@ interface TokamakFixture  {
     addr2: Signer,
     token: TestToken,
     ton: IL2StandardERC20,
-    oracle : TokamakOracle
+    tokamakOracle : TokamakOracle,
+    oracleLibrary: OracleLibrary,
+    uniswapV3FactoryAddress: string
 }
 
 export { TokamakFixture }

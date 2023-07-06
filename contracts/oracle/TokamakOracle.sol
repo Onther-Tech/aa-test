@@ -23,12 +23,17 @@ contract TokamakOracle is Ownable, IOracle {
     uint256 public fixedPriceTOSPerETH;
 
     // feeToken
-    mapping(address => bytes[]) public pricePathes; // pricePathInfos must be ordering as 'weth - fee - ...- ton'
+    mapping(address => bytes[]) public pricePaths; // pricePathInfos must be ordering as 'weth - fee - ...- ton'
 
-    event ChangedPricePathInfo(address token, bytes[] poolPathes);
+    event ChangedPricePathInfo(address token, bytes[] poolPaths);
 
     modifier nonZeroAddress(address _addr) {
         require(_addr != address(0), "zero address");
+        _;
+    }
+
+    modifier nonZero(uint256 amount) {
+        require(amount != 0, "zero value");
         _;
     }
 
@@ -46,23 +51,39 @@ contract TokamakOracle is Ownable, IOracle {
 
     }
 
-    function setPoolPathes(
+    function setFixedPrice(
+        uint256 _fixedPriceTONPerETH,
+        uint256 _fixedPriceTOSPerETH
+    )   public
+        nonZero(_fixedPriceTONPerETH)
+        nonZero(_fixedPriceTOSPerETH)
+        onlyOwner
+    {
+        require(
+            fixedPriceTONPerETH != _fixedPriceTONPerETH &&
+            fixedPriceTOSPerETH != _fixedPriceTOSPerETH, "same value");
+
+        fixedPriceTONPerETH = _fixedPriceTONPerETH;
+        fixedPriceTOSPerETH = _fixedPriceTOSPerETH;
+    }
+
+    function addTokenPricePaths(
         address feeToken,
         bytes[] calldata pathes
     ) public nonZeroAddress(feeToken) onlyOwner {
-        if (pricePathes[feeToken].length != 0)  delete pricePathes[feeToken];
-        pricePathes[feeToken] = new bytes[](pathes.length);
+        if (pricePaths[feeToken].length != 0)  delete pricePaths[feeToken];
+        pricePaths[feeToken] = new bytes[](pathes.length);
         for (uint256 i = 0; i < pathes.length; i++){
             if (pathes[i].length > 0) {
-                pricePathes[feeToken].push(pathes[i]);
+                pricePaths[feeToken].push(pathes[i]);
             }
         }
         emit ChangedPricePathInfo(feeToken, pathes);
     }
 
 
-    function viewPricePathes(address feeToken) external view returns (bytes[] memory) {
-        return pricePathes[feeToken];
+    function viewTokenPricePaths(address feeToken) external view returns (bytes[] memory) {
+        return pricePaths[feeToken];
     }
 
      /**
@@ -71,7 +92,7 @@ contract TokamakOracle is Ownable, IOracle {
      * we choose the one that returns the minimum amount when swapping in pools.
      */
     function getTokenValueOfEth(address feeToken, uint256 ethOutput) public view virtual override returns (uint256 tokenInput){
-        bytes[] memory pathes = pricePathes[feeToken];
+        bytes[] memory pathes = pricePaths[feeToken];
         if (pathes.length > 0){
             uint256 prices = 0;
             for (uint256 i = 0; i < pathes.length; i++){
@@ -84,8 +105,12 @@ contract TokamakOracle is Ownable, IOracle {
         }
     }
 
+    // function getTokenValueOfEth(uint256 ethOutput) external view virtual override returns (uint256 tokenInput){
+    //     return getTokenValueOfEth(ton, ethOutput);
+    // }
+
     function getTokenValueOfEth(uint256 ethOutput) external view virtual override returns (uint256 tokenInput){
-        return getTokenValueOfEth(ton, ethOutput);
+        return fixedPriceTONPerETH * ethOutput / 1e18 ;
     }
 
 }
