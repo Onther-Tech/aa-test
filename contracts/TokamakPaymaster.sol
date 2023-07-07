@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "./interfaces/IOracle.sol";
-
+import "hardhat/console.sol";
 /**
  * A token-based paymaster that accepts token deposits
  * The deposit is only a safeguard: the user pays with his token balance.
@@ -35,6 +35,19 @@ contract TokamakPaymaster is BasePaymaster {
     mapping(IERC20 => mapping(address => uint256)) public balances;
     mapping(address => uint256) public unlockBlock;
 
+    event AddedToken(address token, address oracle);
+    event ChnagedOracle(address token, address oracle);
+    event AddedDepositFor(address token, address account, uint256 amount);
+    event WithdrawTokensTo(address token, address target, uint256 amount);
+    event PostOp(
+        PostOpMode mode,
+        address account,
+        address token,
+        uint256 gasPricePostOp,
+        uint256 maxTokenCost,
+        uint256 maxCost,
+        uint256 actualGasCost);
+
     constructor(IEntryPoint _entryPoint) BasePaymaster(_entryPoint) {
         //owner account is unblocked, to allow withdraw of paid tokens;
         unlockTokenDeposit();
@@ -44,7 +57,13 @@ contract TokamakPaymaster is BasePaymaster {
      * owner of the paymaster should add supported tokens
      */
     function addToken(IERC20 token, IOracle tokenPriceOracle) external onlyOwner {
-        require(oracles[token] == NULL_ORACLE, "Token already set");
+        // require(oracles[token] == NULL_ORACLE, "Token already set");
+        require(address(tokenPriceOracle) != address(0), 'zero oracle');
+        require(address(oracles[token]) != address(tokenPriceOracle), 'same oracle');
+
+        if (oracles[token] == NULL_ORACLE) emit AddedToken(address(token), address(tokenPriceOracle));
+        else emit ChnagedOracle(address(token), address(tokenPriceOracle));
+
         oracles[token] = tokenPriceOracle;
     }
 
@@ -66,6 +85,7 @@ contract TokamakPaymaster is BasePaymaster {
         if (msg.sender == account) {
             lockTokenDeposit();
         }
+        emit AddedDepositFor(address(token), account, amount);
     }
 
     /**
@@ -104,6 +124,8 @@ contract TokamakPaymaster is BasePaymaster {
         require(unlockBlock[msg.sender] != 0 && block.number > unlockBlock[msg.sender], "DepositPaymaster: must unlockTokenDeposit");
         balances[token][msg.sender] -= amount;
         token.safeTransfer(target, amount);
+
+        emit WithdrawTokensTo(address(token), target, amount);
     }
 
     /**
@@ -139,6 +161,7 @@ contract TokamakPaymaster is BasePaymaster {
         uint256 gasPriceUserOp = userOp.gasPrice();
         require(unlockBlock[account] == 0, "DepositPaymaster: deposit not locked");
         require(balances[token][account] >= maxTokenCost, "DepositPaymaster: deposit too low");
+
         return (abi.encode(account, token, gasPriceUserOp, maxTokenCost, maxCost),0);
     }
 
@@ -162,5 +185,7 @@ contract TokamakPaymaster is BasePaymaster {
             balances[token][account] -= actualTokenCost;
         }
         balances[token][owner()] += actualTokenCost;
+
+        emit PostOp(mode, account, address(token), gasPricePostOp, maxTokenCost, maxCost, actualGasCost);
     }
 }

@@ -18,7 +18,13 @@ import { OracleLibrary  } from '../../typechain-types/contracts/libraries/Oracle
 
 export const tokamakFixtures = async function (): Promise<TokamakFixture> {
     const [deployer, addr1, addr2 ] = await ethers.getSigners();
-    const { tonAddress, uniswapV3FactoryAddress, wethAddress } = await hre.getNamedAccounts();
+    const { tonAddress, uniswapV3FactoryAddress, wethAddress, l2BridgeAddress } = await hre.getNamedAccounts();
+    const tonAdmin = await ethers.getSigner(l2BridgeAddress);
+
+    await ethers.provider.send("hardhat_setBalance", [
+      tonAdmin.address,
+      "0x8ac7230489e80000",
+    ]);
 
     // await ethers.provider.send("hardhat_setBalance", [
     //   deployer.address,
@@ -55,9 +61,10 @@ export const tokamakFixtures = async function (): Promise<TokamakFixture> {
     const L2StandardERC20Abi = require("../abi/L2StandardERC20.json")
     const ton = await ethers.getContractAt(L2StandardERC20Abi.abi, tonAddress, deployer) as IL2StandardERC20;
 
+    await (await ton.connect(tonAdmin).mint(deployer.address, ethers.utils.parseEther("10000000000")));
+
     const OracleLibrary_ = await ethers.getContractFactory("OracleLibrary");
     const oracleLibrary = (await OracleLibrary_.connect(deployer).deploy()) as OracleLibrary;
-
 
     const TokamakOracle_ = await ethers.getContractFactory("TokamakOracle");
     const tokamakOracle = (await TokamakOracle_.connect(deployer).deploy()) as TokamakOracle;

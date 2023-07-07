@@ -120,13 +120,20 @@ const config: HardhatUserConfig = {
       goerli: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
       hardhat: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
     },
+    tonAdminAddress: {
+      default: 12,
+      hardhat: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+      mainnet: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+      goerli: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+      titan: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+      titangoerli: 'l2BridgeAddress',
+    },
   },
   networks: {
     hardhat: {
       forking: {
         url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
-        // blockNumber: 3815
-        blockNumber: 3810
+        blockNumber: 20582
       },
       allowUnlimitedContractSize: false,
       deploy: ['deploy']
