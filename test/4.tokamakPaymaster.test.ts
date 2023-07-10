@@ -235,10 +235,236 @@ describe('4.tokamakPaymaster.test', () => {
     });
 
     describe('# withdrawTokensTo', () => {
+        it('revert: when _unlockBlock is zero', async () => {
+            let depositInfo = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                addr1Address,
+            );
+            expect(depositInfo._unlockBlock).to.be.eq(0)
+            const amount = ethers.utils.parseEther("1")
+            await expect(deployed.tokamakPaymaster.connect(addr1).withdrawTokensTo(
+                deployed.ton.address,
+                addr1Address,
+                amount
+            )).to.be.rejectedWith("DepositPaymaster: must unlockTokenDeposit")
+        });
+
+        it('withdrawTokensTo: when _unlockBlock is not zero and unlockTokenDeposit', async () => {
+            let depositInfo = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                addr1Address,
+            );
+            expect(depositInfo._unlockBlock).to.be.eq(0)
+            await (await deployed.tokamakPaymaster.connect(addr1).unlockTokenDeposit()).wait()
+            depositInfo = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                addr1Address,
+            );
+            expect(depositInfo._unlockBlock).to.be.gt(0)
+
+            let depositTon = depositInfo.amount
+            let balanceTon = await deployed.ton.balanceOf(addr1Address)
+            const amount = ethers.utils.parseEther("1")
+            await (await deployed.tokamakPaymaster.connect(addr1).withdrawTokensTo(
+                deployed.ton.address,
+                addr1Address,
+                amount
+            )).wait()
+
+            let depositInfo2 = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                addr1Address,
+            );
+            expect(await deployed.ton.balanceOf(addr1Address)).to.be.eq(balanceTon.add(amount))
+            expect(depositInfo2.amount).to.be.eq(depositTon.sub(amount))
+        });
+
+        it('withdrawTokensTo: when _unlockBlock is not zero and unlockTokenDeposit', async () => {
+            let accountAddress = await deployed.tokamakAccountFactory.getAddress(addr1.address, 0)
+            const tokamakAccount = await ethers.getContractAt(TokamakAccount.abi, accountAddress, addr1)
+
+            let depositInfo = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                accountAddress,
+            );
+            expect(depositInfo._unlockBlock).to.be.eq(0)
+
+            //
+            const func = deployed.tokamakPaymaster.interface.encodeFunctionData("unlockTokenDeposit", []);
+            await (await tokamakAccount.connect(addr1).execute(
+                    deployed.tokamakPaymaster.address,
+                    ethers.constants.Zero,
+                    func
+                )).wait()
+            //
+
+            depositInfo = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                accountAddress,
+            );
+            expect(depositInfo._unlockBlock).to.be.gt(0)
+
+            let depositTon = depositInfo.amount
+            let balanceTon = await deployed.ton.balanceOf(addr1Address)
+            const amount = ethers.utils.parseEther("1")
+            //
+            const func1 = deployed.tokamakPaymaster.interface.encodeFunctionData(
+                "withdrawTokensTo",
+                [
+                    deployed.ton.address,
+                    addr1Address,
+                    amount
+                ]);
+            await (await tokamakAccount.connect(addr1).execute(
+                    deployed.tokamakPaymaster.address,
+                    ethers.constants.Zero,
+                    func1
+                )).wait()
+            //
+
+            let depositInfo2  = await deployed.tokamakPaymaster.depositInfo(
+                deployed.ton.address,
+                addr1Address,
+            );
+            expect(await deployed.ton.balanceOf(addr1Address)).to.be.eq(balanceTon.add(amount))
+            expect(depositInfo2.amount).to.be.eq(depositTon.sub(amount))
+        });
 
     });
 
-    describe('# getTokenValueOfEth', () => {
+    describe('# deposit', () => {
+
+        it('# deposit ', async () => {
+            const amount = ethers.utils.parseEther("1")
+
+            await deployer.sendTransaction({
+                to: addr1Address,
+                value: amount
+            })
+            const balanceAddr1 = await addr1.getBalance()
+
+            const balanceDeposit = await deployed.tokamakPaymaster.getDeposit()
+            await (await deployed.tokamakPaymaster.connect(addr1).deposit({value: amount})).wait()
+            expect(await addr1.getBalance()).to.be.lt(balanceAddr1.sub(amount))
+            expect(await deployed.tokamakPaymaster.getDeposit()).to.be.eq(balanceDeposit.add(amount))
+
+        });
+    });
+
+    describe('# withdrawTo', () => {
+
+        it('# revert: not Owner', async () => {
+            const amount = ethers.utils.parseEther("0.1")
+            await expect(deployed.tokamakPaymaster.connect(addr1).withdrawTo(addr1Address, amount)).
+                to.be.rejectedWith("Ownable: caller is not the owner")
+        });
+
+        it('# withdrawTo ', async () => {
+
+            const amount = ethers.utils.parseEther("0.1")
+
+            const balanceAddr1 = await addr1.getBalance()
+            const balanceDeposit = await deployed.tokamakPaymaster.getDeposit()
+
+            await (await deployed.tokamakPaymaster.connect(deployer).withdrawTo(addr1Address, amount)).wait()
+
+            expect(await addr1.getBalance()).to.be.eq(balanceAddr1.add(amount))
+            expect(await deployed.tokamakPaymaster.getDeposit()).to.be.eq(balanceDeposit.sub(amount))
+
+        });
+
+    });
+
+    describe('# withdrawStake : No stake to withdraw', () => {
+
+        it('# revert: No stake to withdraw', async () => {
+            await expect(deployed.tokamakPaymaster.connect(deployer).withdrawStake(addr1Address)).
+                to.be.revertedWith("No stake to withdraw")
+        });
+
+    });
+
+    describe('# addStake ', () => {
+
+        it('# revert: not Owner ', async () => {
+            const amount = ethers.utils.parseEther("0.1")
+            let unstakeDelaySec = 1000
+
+            await expect(deployed.tokamakPaymaster.connect(addr1).addStake(unstakeDelaySec)).
+                to.be.rejectedWith("Ownable: caller is not the owner")
+        });
+
+        it('# addStake ', async () => {
+            const amount = ethers.utils.parseEther("0.1")
+            let unstakeDelaySec = 1000
+
+            await (await deployed.tokamakPaymaster.connect(deployer).addStake(unstakeDelaySec, {value:amount})).wait()
+
+            let depositInfo = await deployed.tokamakEntryPoint.getDepositInfo(deployed.tokamakPaymaster.address)
+
+            // console.log(depositInfo)
+
+            expect(depositInfo.staked).to.be.eq(true)
+            expect(depositInfo.stake).to.be.eq(amount)
+            expect(depositInfo.unstakeDelaySec).to.be.eq(unstakeDelaySec)
+        });
+
+    });
+
+    describe('# withdrawStake : must call unlockStake() first', () => {
+
+        it('# revert: must call unlockStake() first', async () => {
+            await expect(deployed.tokamakPaymaster.connect(deployer).withdrawStake(addr1Address)).
+                to.be.revertedWith("must call unlockStake() first")
+        });
+
+    });
+
+    describe('# unlockStake  ', () => {
+
+        it('# revert: not Owner ', async () => {
+            await expect(deployed.tokamakPaymaster.connect(addr1).unlockStake()).
+                to.be.rejectedWith("Ownable: caller is not the owner")
+        });
+
+        it('# unlockStake ', async () => {
+            await(await deployed.tokamakPaymaster.connect(deployer).unlockStake()).wait()
+        });
+
+    });
+
+    describe('# withdrawStake : Stake withdrawal is not due', () => {
+
+        it('# revert: not Owner', async () => {
+            await expect(deployed.tokamakPaymaster.connect(addr1).withdrawStake(addr1Address)).
+                to.be.rejectedWith("Ownable: caller is not the owner")
+        });
+
+        it('# withdrawStake ', async () => {
+            await expect(deployed.tokamakPaymaster.connect(deployer).withdrawStake(addr1Address)).
+                to.be.rejectedWith("Stake withdrawal is not due")
+        });
+
+        it('# pass time ', async () => {
+            let unstakeDelaySec = 1000
+            ethers.provider.send("evm_increaseTime", [unstakeDelaySec])
+            ethers.provider.send("evm_mine")
+        });
+
+        it('# withdrawStake ', async () => {
+            let balance = await addr1.getBalance()
+            let depositInfo1 = await deployed.tokamakEntryPoint.getDepositInfo(deployed.tokamakPaymaster.address)
+
+            await deployed.tokamakPaymaster.connect(deployer).withdrawStake(addr1Address)
+            let depositInfo2 = await deployed.tokamakEntryPoint.getDepositInfo(deployed.tokamakPaymaster.address)
+
+            expect(depositInfo2.stake).to.be.eq(0)
+            expect(depositInfo2.withdrawTime).to.be.eq(0)
+            expect(depositInfo2.unstakeDelaySec).to.be.eq(0)
+            expect(await addr1.getBalance()).to.be.eq(balance.add(depositInfo1.stake))
+
+        });
+
 
     });
 
