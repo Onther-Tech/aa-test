@@ -40,6 +40,12 @@ const optimizedComilerSettings = {
   }
 }
 
+// const swaprouterComilerSettings = {
+//   version: '0.7.6',
+//   settings: {
+//     optimizer: { enabled: true, runs: 1000000 }
+//   }
+// }
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [{
@@ -52,6 +58,9 @@ const config: HardhatUserConfig = {
       }
     }],
     // overrides: {
+    //   'contracts/interfaces/ISwapRouter02.sol': swaprouterComilerSettings,
+    // }
+    // overrides: {
     //   'contracts/TokamakEntryPoint.sol': optimizedComilerSettings,
     //   'contracts/factory/TokamakAccountFactory.sol': optimizedComilerSettings,
     //   'contracts/TokamakPaymaster.sol': optimizedComilerSettings
@@ -61,8 +70,9 @@ const config: HardhatUserConfig = {
     deployer: 0,
     addr1: 1,
     addr2: 2,
+    beneficiary: 3,
     wethAddress: {
-      default: 3,
+      default: 4,
       hardhat: '0x4200000000000000000000000000000000000006',
       mainnet: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       goerli: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
@@ -70,7 +80,7 @@ const config: HardhatUserConfig = {
       titangoerli: '0x4200000000000000000000000000000000000006',
     },
     tonAddress: {
-      default: 4,
+      default: 5,
       hardhat: '0xfa956eb0c4b3e692ad5a6b2f08170ade55999aca',
       mainnet: '0x2be5e8c109e2197D077D13A82dAead6a9b3433C5',
       goerli: '0x68c1F9620aeC7F2913430aD6daC1bb16D8444F00',
@@ -78,7 +88,7 @@ const config: HardhatUserConfig = {
       titangoerli: '0xfa956eb0c4b3e692ad5a6b2f08170ade55999aca',
     },
     tosAddress: {
-      default: 5,
+      default: 6,
       hardhat: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
       mainnet: '0x409c4D8cd5d2924b9bc5509230d16a61289c8153',
       goerli: '0x67F3bE272b1913602B191B3A68F7C238A2D81Bb9',
@@ -86,7 +96,7 @@ const config: HardhatUserConfig = {
       titangoerli: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
     },
     uniswapV3FactoryAddress: {
-      default: 6,
+      default: 7,
       hardhat: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
       mainnet: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       goerli: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
@@ -94,39 +104,55 @@ const config: HardhatUserConfig = {
       titangoerli: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
     },
     l1MessengerAddress: {
-      default: 7,
+      default: 8,
       goerli: '0x2878373BA3Be0Ef2a93Ba5b3F7210D76cb222e63',
       hardhat: '0x2878373BA3Be0Ef2a93Ba5b3F7210D76cb222e63',
     },
     l2MessengerAddress: {
-      default: 8,
+      default: 9,
       titan: '0x4200000000000000000000000000000000000007',
       titan_goerli: '0x4200000000000000000000000000000000000007',
       hardhat: '0x4200000000000000000000000000000000000007',
     },
     l1BridgeAddress: {
-      default: 9,
+      default: 10,
       goerli: '0x7377F3D0F64d7a54Cf367193eb74a052ff8578FD',
       hardhat: '0x7377F3D0F64d7a54Cf367193eb74a052ff8578FD',
     },
     l2BridgeAddress: {
-      default: 10,
+      default: 11,
       titan: '0x4200000000000000000000000000000000000010',
       titan_goerli: '0x4200000000000000000000000000000000000010',
       hardhat: '0x4200000000000000000000000000000000000010',
     },
     l1AddressManagerAddress: {
-      default: 11,
+      default: 12,
       goerli: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
       hardhat: '0xEFa07e4263D511fC3a7476772e2392efFb1BDb92',
     },
     tonAdminAddress: {
-      default: 12,
+      default: 13,
       hardhat: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
       mainnet: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
       goerli: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
       titan: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
-      titangoerli: 'l2BridgeAddress',
+      titangoerli: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+    },
+    quoterV2Address: {
+      default: 14,
+      hardhat: '0x4Fe186d98bbb99C4B2f9c8c7F82E1Bb8231CF4d6',
+      mainnet: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+      goerli: '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+      titan: '0x4Fe186d98bbb99C4B2f9c8c7F82E1Bb8231CF4d6',
+      titangoerli: '0x4Fe186d98bbb99C4B2f9c8c7F82E1Bb8231CF4d6',
+    },
+    SwapRouter02Address: {
+      default: 15,
+      hardhat: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
+      mainnet: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+      goerli: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+      titan: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
+      titangoerli: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
     },
   },
   networks: {

@@ -9,8 +9,10 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import "@account-abstraction/contracts/core/BaseAccount.sol";
+// import "@account-abstraction/contracts/core/BaseAccount.sol";
+import "./core/BaseAccount.sol";
 import "./callback/TokenCallbackHandler.sol";
+import "hardhat/console.sol";
 
 /**
   * minimal account.
@@ -55,6 +57,15 @@ contract TokamakAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, I
      * execute a transaction (called directly from owner, or by entryPoint)
      */
     function execute(address dest, uint256 value, bytes calldata func) external {
+        // console.log('=========== TokamakAccount execute');
+        // console.log('TokamakAccount msg.sender %s', msg.sender);
+        // console.log('address(entryPoint()) %s', address(entryPoint()));
+        // console.log('owner %s', owner);
+        // console.log('address tokamakAccount %s', address(this));
+        // console.log('dest %s', dest);
+        // console.log('value %s', value);
+        // console.logBytes(func);
+
         _requireFromEntryPointOrOwner();
         _call(dest, value, func);
     }

@@ -15,10 +15,13 @@ import { IL2StandardERC20  } from '../../typechain-types/contracts/interfaces/IL
 import { TokamakOracle  } from '../../typechain-types/contracts/oracle/TokamakOracle.sol'
 
 import { OracleLibrary  } from '../../typechain-types/contracts/libraries/OracleLibrary.sol'
+import { IQuoterV2  } from '../../typechain-types/contracts/interfaces/IQuoterV2'
 
 export const tokamakFixtures = async function (): Promise<TokamakFixture> {
-    const [deployer, addr1, addr2 ] = await ethers.getSigners();
-    const { tonAddress, uniswapV3FactoryAddress, wethAddress, l2BridgeAddress } = await hre.getNamedAccounts();
+    const [deployer, addr1, addr2, beneficiary ] = await ethers.getSigners();
+    const { tonAddress, uniswapV3FactoryAddress,
+       wethAddress, l2BridgeAddress,
+       quoterV2Address, SwapRouter02Address} = await hre.getNamedAccounts();
     const tonAdmin = await ethers.getSigner(l2BridgeAddress);
 
     await ethers.provider.send("hardhat_setBalance", [
@@ -71,6 +74,9 @@ export const tokamakFixtures = async function (): Promise<TokamakFixture> {
 
     // await (await tokamakOracle.initialize(tonAddress, oracleLibrary.address, uniswapV3FactoryAddress)).wait();
 
+    const IQuoterV2Abi = require("../abi/QuoterV2.json")
+    const quoterV2 = await ethers.getContractAt(IQuoterV2Abi.abi, quoterV2Address, deployer) as IQuoterV2;
+
     return {
       tokamakEntryPoint: tokamakEntryPoint,
       tokamakPaymaster: tokamakPaymaster,
@@ -79,12 +85,16 @@ export const tokamakFixtures = async function (): Promise<TokamakFixture> {
       deployer: deployer,
       addr1: addr1,
       addr2: addr2,
+      beneficiary: beneficiary,
       token: token,
       ton: ton,
       tokamakOracle : tokamakOracle,
       oracleLibrary: oracleLibrary,
       uniswapV3FactoryAddress: uniswapV3FactoryAddress,
-      wethAddress: wethAddress
+      wethAddress: wethAddress,
+      quoterV2Address: quoterV2Address,
+      SwapRouter02Address: SwapRouter02Address,
+      quoterV2: quoterV2
   }
 }
 

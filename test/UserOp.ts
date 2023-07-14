@@ -5,13 +5,13 @@ import {
   keccak256
 } from 'ethers/lib/utils'
 import { BigNumber, Contract, Signer, Wallet } from 'ethers'
-import { AddressZero, callDataCost, rethrow } from './testutils'
+import { AddressZero, callDataCost, rethrow } from './tokamak_testutils'
 import { ecsign, toRpcSig, keccak256 as keccak256_buffer } from 'ethereumjs-util'
 import {
   EntryPoint
 } from '../typechain'
 import { UserOperation } from './UserOperation'
-import { Create2Factory } from '../src/Create2Factory'
+// import { Create2Factory } from '../src/Create2Factory'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
   if (forSignature) {
@@ -134,6 +134,7 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
     if (op1.nonce == null) op1.nonce = 0
     if (op1.sender == null) {
       // hack: if the init contract is our known deployer, then we know what the address would be, without a view call
+      /*
       if (initAddr.toLowerCase() === Create2Factory.contractAddress.toLowerCase()) {
         const ctr = hexDataSlice(initCallData, 32)
         const salt = hexDataSlice(initCallData, 0, 32)
@@ -142,17 +143,22 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
         // console.log('\t== not our deployer. our=', Create2Factory.contractAddress, 'got', initAddr)
         if (provider == null) throw new Error('no entrypoint/provider')
         op1.sender = await entryPoint!.callStatic.getSenderAddress(op1.initCode!).catch(e => e.errorArgs.sender)
-      }
+      }*/
+      if (provider == null) throw new Error('no entrypoint/provider')
+        op1.sender = await entryPoint!.callStatic.getSenderAddress(op1.initCode!).catch(e => e.errorArgs.sender)
     }
     if (op1.verificationGasLimit == null) {
       if (provider == null) throw new Error('no entrypoint/provider')
-      const initEstimate = await provider.estimateGas({
+      let initEstimate = await provider.estimateGas({
         from: entryPoint?.address,
         to: initAddr,
         data: initCallData,
         gasLimit: 10e6
       })
+      // initEstimate = initEstimate*1.2
+      // console.log('initEstimate', initEstimate)
       op1.verificationGasLimit = BigNumber.from(DefaultsForUserOp.verificationGasLimit).add(initEstimate)
+      // console.log('verificationGasLimit', op1.verificationGasLimit)
     }
   }
   if (op1.nonce == null) {
@@ -160,9 +166,11 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
     const c = new Contract(op.sender!, [`function ${getNonceFunction}() view returns(uint256)`], provider)
     op1.nonce = await c[getNonceFunction]().catch(rethrow())
   }
+  // console.log('op1.nonce', op1.nonce)
+
   if (op1.callGasLimit == null && op.callData != null) {
     if (provider == null) throw new Error('must have entryPoint for callGasLimit estimate')
-    const gasEtimated = await provider.estimateGas({
+    let gasEtimated = await provider.estimateGas({
       from: entryPoint?.address,
       to: op1.sender,
       data: op1.callData
@@ -170,7 +178,10 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
 
     // console.log('estim', op1.sender,'len=', op1.callData!.length, 'res=', gasEtimated)
     // estimateGas assumes direct call from entryPoint. add wrapper cost.
-    op1.callGasLimit = gasEtimated // .add(55000)
+    // op1.callGasLimit = gasEtimated // .add(55000)
+    op1.callGasLimit = gasEtimated.mul(BigNumber.from("2"))
+    // console.log('callGasLimit', gasEtimated)
+
   }
   if (op1.maxFeePerGas == null) {
     if (provider == null) throw new Error('must have entryPoint to autofill maxFeePerGas')
@@ -182,6 +193,10 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
   if (op1.maxPriorityFeePerGas == null) {
     op1.maxPriorityFeePerGas = DefaultsForUserOp.maxPriorityFeePerGas
   }
+
+  // console.log('op1', op1)
+
+
   const op2 = fillUserOpDefaults(op1)
   // eslint-disable-next-line @typescript-eslint/no-base-to-string
   if (op2.preVerificationGas.toString() === '0') {
@@ -194,9 +209,13 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
 export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | Signer, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
   const provider = entryPoint?.provider
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
+  // console.log('op2', op2)
 
   const chainId = await provider!.getNetwork().then(net => net.chainId)
+  // console.log('chainId', chainId)
+
   const message = arrayify(getUserOpHash(op2, entryPoint!.address, chainId))
+  // console.log('message', message)
 
   return {
     ...op2,

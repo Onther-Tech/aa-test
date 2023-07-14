@@ -5,8 +5,11 @@ pragma solidity ^0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@account-abstraction/contracts/core/BasePaymaster.sol";
-import "./interfaces/IOracle.sol";
+// import "@account-abstraction/contracts/core/BasePaymaster.sol";
+import "./core/BasePaymaster.sol";
+import "./core/EntryPoint.sol";
+
+import "./interfaces1/IOracle.sol";
 import "hardhat/console.sol";
 /**
  * A token-based paymaster that accepts token deposits
@@ -47,6 +50,8 @@ contract TokamakPaymaster is BasePaymaster {
         uint256 maxTokenCost,
         uint256 maxCost,
         uint256 actualGasCost);
+
+    event InsufficientDepositToken(address account, address token, uint256 amount);
 
     constructor(IEntryPoint _entryPoint) BasePaymaster(_entryPoint) {
         //owner account is unblocked, to allow withdraw of paid tokens;
@@ -148,20 +153,48 @@ contract TokamakPaymaster is BasePaymaster {
      */
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
     internal view override returns (bytes memory context, uint256 validationData) {
-
+        // console.log("_validatePaymasterUserOp maxCost %s", maxCost);
         (userOpHash);
         // verificationGasLimit is dual-purposed, as gas limit for postOp. make sure it is high enough
         require(userOp.verificationGasLimit > COST_OF_POST, "DepositPaymaster: gas too low for postOp");
+        // console.log("maxCost %s", maxCost);
 
         bytes calldata paymasterAndData = userOp.paymasterAndData;
         require(paymasterAndData.length == 20+20, "DepositPaymaster: paymasterAndData must specify token");
         IERC20 token = IERC20(address(bytes20(paymasterAndData[20:])));
         address account = userOp.getSender();
+        // uint256 balance = token.balanceOf(account);
+        // console.log("balance %s", balance);
         uint256 maxTokenCost = getTokenValueOfEth(token, maxCost);
-        uint256 gasPriceUserOp = userOp.gasPrice();
-        require(unlockBlock[account] == 0, "DepositPaymaster: deposit not locked");
-        require(balances[token][account] >= maxTokenCost, "DepositPaymaster: deposit too low");
+        // console.log("maxTokenCost %s", maxTokenCost);
 
+        uint256 gasPriceUserOp = userOp.gasPrice();
+        // console.log("gasPriceUserOp %s", gasPriceUserOp);
+
+        require(unlockBlock[account] == 0, "DepositPaymaster: deposit not locked");
+
+        // 원래 코드
+        // console.log("_validatePaymasterUserOp balances[token][account] %s", balances[token][account]);
+
+        uint256 allowance = token.allowance(account, address(this));
+        // console.log("_validatePaymasterUserOp allowanceTON %s", allowance);
+        // uint256 balanceToken =  token.balanceOf(account);
+        if (allowance < maxTokenCost) {
+            require(balances[token][account] >= maxTokenCost, "DepositPaymaster: deposit too low");
+        } else {
+            require(
+               balances[token][account] >= maxTokenCost || token.balanceOf(account) >= maxTokenCost,
+               "DepositPaymaster: token's balance or deposit is insufficient");
+        }
+
+        // 톤이 없을때, 잔액이 있는지 확인만 한다. 이때 확인을 했어도, 실제 트랜잭션을 보낼때 없다면 에러처리가 된다.
+        // require(token.balanceOf(account) >= maxTokenCost, "DepositPaymaster: token's balance is insufficient");
+
+        // uint256 allowance = token.allowance(account, address(this));
+        // console.log("_validatePaymasterUserOp allowanceTON %s", allowance);
+        // require(token.allowance(account, address(this)) >= maxTokenCost, "FeeTokenApproveFailed");
+
+        // require(token.allowance(account, address(this)) >= maxTokenCost,"DepositPaymaster: token's allowance is insufficient");
         return (abi.encode(account, token, gasPriceUserOp, maxTokenCost, maxCost),0);
     }
 
@@ -173,19 +206,56 @@ contract TokamakPaymaster is BasePaymaster {
      * In this mode, we use the deposit to pay (which we validated to be large enough)
      */
     function _postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) internal override {
-
+        // console.log("_postOp ------------------mode %s, actualGasCost %s", uint256(mode), actualGasCost);
         (address account, IERC20 token, uint256 gasPricePostOp, uint256 maxTokenCost, uint256 maxCost) = abi.decode(context, (address, IERC20, uint256, uint256, uint256));
+
+        // console.log("_postOp account %s", account);
+        // console.log("_postOp token %s", address(token));
+        // console.log("_postOp gasPricePostOp %s", gasPricePostOp);
+        // console.log("_postOp maxTokenCost %s", maxTokenCost);
+        // console.log("_postOp maxCost %s", maxCost);
+
         //use same conversion rate as used for validation.
         uint256 actualTokenCost = (actualGasCost + COST_OF_POST * gasPricePostOp) * maxTokenCost / maxCost;
+        // console.log("_postOp actualTokenCost %s", actualTokenCost);
+        // console.log("_postOp mode %s", uint256(mode));
+
+        uint256 balance = token.balanceOf(account);
+        // console.log("_postOp balanceTON %s", balance);
+        uint256 allowance = token.allowance(account, address(this));
+        // console.log("_postOp allowanceTON %s", allowance);
+        // console.log("_postOp balances[token][account] %s", balances[token][account]);
+        // console.log("_postOp owner() %s", owner());
+        // console.log("_postOp after balances[token][owner()] %s", balances[token][owner()]);
+
         if (mode != PostOpMode.postOpReverted) {
-            // attempt to pay with tokens:
-            token.safeTransferFrom(account, address(this), actualTokenCost);
+            // console.log("mode != PostOpMode.postOpReverted ");
+            // 실패된 경우가 아닌경우,
+            // 디파짓이 있거나, approve가 되어 있다면 토큰을 전송하면 된다.
+
+            if (allowance < actualTokenCost) {
+                require(balances[token][account] >= actualTokenCost, "TokenDepositInsufficient");
+            }
+
+            if (allowance >= actualTokenCost && balance >= actualTokenCost ) {
+                token.safeTransferFrom(account, address(this), actualTokenCost);
+
+            } else {
+                balances[token][account] -= actualTokenCost;
+            }
+
         } else {
             //in case above transferFrom failed, pay with deposit:
-            balances[token][account] -= actualTokenCost;
+            if (balances[token][account] < actualTokenCost) {
+                emit InsufficientDepositToken(account, address(token), (actualTokenCost - balances[token][account]));
+                balances[token][account] = 0;
+            } else {
+                balances[token][account] -= actualTokenCost;
+            }
         }
-        balances[token][owner()] += actualTokenCost;
 
+        balances[token][owner()] += actualTokenCost;
+        // console.log("_postOp after balances[token][account] %s", balances[token][account]);
         emit PostOp(mode, account, address(token), gasPricePostOp, maxTokenCost, maxCost, actualGasCost);
     }
 }

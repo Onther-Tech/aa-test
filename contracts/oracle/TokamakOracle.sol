@@ -2,8 +2,8 @@
 pragma solidity ^0.8.12;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IOracle.sol";
-import "../interfaces/IL2StandardERC20.sol";
+import "../interfaces1/IOracle.sol";
+import "../interfaces1/IL2StandardERC20.sol";
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "hardhat/console.sol";

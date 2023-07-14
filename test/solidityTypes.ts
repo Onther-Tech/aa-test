@@ -8,3 +8,4 @@ export type uint = BigNumberish
 export type uint48 = BigNumberish
 export type bytes = BytesLike
 export type bytes32 = BytesLike
+export type bool = boolean
