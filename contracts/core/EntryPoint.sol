@@ -377,6 +377,8 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
             address sender = opInfo.mUserOp.sender;
             if (sender.code.length != 0) revert FailedOp(opIndex, "AA10 sender already constructed");
             // console.log('_createSenderIfNeeded opInfo.mUserOp.verificationGasLimit %s', opInfo.mUserOp.verificationGasLimit);
+
+            // 코드 수정한 부분
             // address sender1 = senderCreator.createSender{gas : opInfo.mUserOp.verificationGasLimit}(initCode);
             address sender1 = address(0);
             try senderCreator.createSender{gas : opInfo.mUserOp.verificationGasLimit}(initCode)
