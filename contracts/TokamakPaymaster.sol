@@ -176,25 +176,11 @@ contract TokamakPaymaster is BasePaymaster {
         // 원래 코드
         // console.log("_validatePaymasterUserOp balances[token][account] %s", balances[token][account]);
 
-        uint256 allowance = token.allowance(account, address(this));
-        // console.log("_validatePaymasterUserOp allowanceTON %s", allowance);
-        // uint256 balanceToken =  token.balanceOf(account);
-        if (allowance < maxTokenCost) {
-            require(balances[token][account] >= maxTokenCost, "DepositPaymaster: deposit too low");
-        } else {
-            require(
-               balances[token][account] >= maxTokenCost || token.balanceOf(account) >= maxTokenCost,
-               "DepositPaymaster: token's balance or deposit is insufficient");
+        if(balances[token][account] < maxTokenCost) {
+            require(token.allowance(account, address(this)) >= maxTokenCost
+            && token.balanceOf(account) > maxTokenCost,
+            "DepositPaymaster: allowance(balance) or deposit is insufficient");
         }
-
-        // 톤이 없을때, 잔액이 있는지 확인만 한다. 이때 확인을 했어도, 실제 트랜잭션을 보낼때 없다면 에러처리가 된다.
-        // require(token.balanceOf(account) >= maxTokenCost, "DepositPaymaster: token's balance is insufficient");
-
-        // uint256 allowance = token.allowance(account, address(this));
-        // console.log("_validatePaymasterUserOp allowanceTON %s", allowance);
-        // require(token.allowance(account, address(this)) >= maxTokenCost, "FeeTokenApproveFailed");
-
-        // require(token.allowance(account, address(this)) >= maxTokenCost,"DepositPaymaster: token's allowance is insufficient");
         return (abi.encode(account, token, gasPriceUserOp, maxTokenCost, maxCost),0);
     }
 

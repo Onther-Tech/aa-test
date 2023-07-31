@@ -27,6 +27,7 @@ contract TokamakOracle is Ownable, IOracle {
     mapping(address => bytes[]) public pricePaths; // pricePathInfos must be ordering as 'weth - fee - ...- ton'
 
     event ChangedPricePathInfo(address token, bytes[] poolPaths);
+    event SetFixedTONPrice(uint256 amount);
 
     modifier nonZeroAddress(address _addr) {
         require(_addr != address(0), "zero address");
@@ -52,19 +53,29 @@ contract TokamakOracle is Ownable, IOracle {
 
     }
 
-    function setFixedPrice(
-        uint256 _fixedPriceTONPerETH,
-        uint256 _fixedPriceTOSPerETH
+    function setFixedTONPrice(
+        uint256 _fixedPriceTONPerETH
     )   public
         nonZero(_fixedPriceTONPerETH)
+        onlyOwner
+    {
+        require(
+            fixedPriceTONPerETH != _fixedPriceTONPerETH, "same value");
+
+        fixedPriceTONPerETH = _fixedPriceTONPerETH;
+
+        emit SetFixedTONPrice(_fixedPriceTONPerETH);
+    }
+
+    function setFixedTOSPrice(
+        uint256 _fixedPriceTOSPerETH
+    )   public
         nonZero(_fixedPriceTOSPerETH)
         onlyOwner
     {
         require(
-            fixedPriceTONPerETH != _fixedPriceTONPerETH &&
             fixedPriceTOSPerETH != _fixedPriceTOSPerETH, "same value");
 
-        fixedPriceTONPerETH = _fixedPriceTONPerETH;
         fixedPriceTOSPerETH = _fixedPriceTOSPerETH;
     }
 

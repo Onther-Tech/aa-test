@@ -339,8 +339,13 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
             factoryInfo = _getStakeInfo(factory);
         }
 
+        // console.log('validationData %s',  validationData);
+        // console.log('paymasterValidationData %s',  paymasterValidationData);
         ValidationData memory data = _intersectTimeRange(validationData, paymasterValidationData);
-        // console.log('validationData %s', validationData);
+        // console.log('ValidationData data.aggregator %s', data.aggregator);
+        // console.log('ValidationData data.aggregator %s', data.validAfter);
+        // console.log('ValidationData data.aggregator %s', data.validUntil);
+
 
         address aggregator = data.aggregator;
         bool sigFailed = aggregator == address(1);
@@ -470,6 +475,7 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
 
         // console.log('_validateAccountPrepayment mUserOp.verificationGasLimit %s', mUserOp.verificationGasLimit);
         // 여기에서 가스를 보내준다. paymaster 가 0이 아닌데, 이 값이 0이면 에러난다.
+        // 코드 추가한 부분
         if (mUserOp.verificationGasLimit == 0) revert FailedOp(opIndex, string.concat("AA23 reverted: zero verificationGasLimit"));
 
         try IAccount(sender).validateUserOp{gas : mUserOp.verificationGasLimit}(op, opInfo.userOpHash, missingAccountFunds)
