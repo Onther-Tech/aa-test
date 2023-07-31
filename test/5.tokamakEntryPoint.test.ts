@@ -111,18 +111,17 @@ describe('5.TokamakEntryPoint.test', () => {
 
         });
 
-        it('setFixedPrice', async () => {
+        it('setFixedTONPrice', async () => {
             const priceTon = ethers.utils.parseEther("1000")
             const priceTos = ethers.utils.parseEther("800")
 
-            await (await deployed.tokamakOracle.connect(deployer).setFixedPrice(
-                priceTon, priceTos
+            await (await deployed.tokamakOracle.connect(deployer).setFixedTONPrice(
+                priceTon
                 )).wait()
 
             expect(await deployed.tokamakOracle.fixedPriceTONPerETH()).to.be.eq(
                 priceTon)
-            expect(await deployed.tokamakOracle.fixedPriceTOSPerETH()).to.be.eq(
-                priceTos)
+
         });
 
         it('addTokenPricePaths', async () => {
@@ -335,7 +334,7 @@ describe('5.TokamakEntryPoint.test', () => {
             // console.log(userOp)
 
             await expect( deployed.tokamakEntryPoint.callStatic.simulateValidation(userOp))
-                .to.be.revertedWith("AA33 reverted: DepositPaymaster: deposit too low")
+                .to.be.revertedWith("AA33 reverted: DepositPaymaster: allowance(balance) or deposit is insufficient")
         });
 
         it('# 4. simulateValidation : revert if Account did not deployed and initCode is null', async () => {

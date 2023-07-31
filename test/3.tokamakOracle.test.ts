@@ -42,14 +42,14 @@ describe('3.TokamakOracle.test', () => {
         });
     });
 
-    describe('# setFixedPrice', () => {
+    describe('# setFixedTONPrice', () => {
 
         it('onlyOwner : revert ', async () => {
             const priceTon = ethers.utils.parseEther("1000")
             const priceTos = ethers.utils.parseEther("800")
 
-            await expect(deployed.tokamakOracle.connect(addr1).setFixedPrice(
-                priceTon, priceTos
+            await expect(deployed.tokamakOracle.connect(addr1).setFixedTONPrice(
+                priceTon
                 )).to.be.revertedWith("Ownable: caller is not the owner")
 
         });
@@ -58,14 +58,13 @@ describe('3.TokamakOracle.test', () => {
             const priceTon = ethers.utils.parseEther("1000")
             const priceTos = ethers.utils.parseEther("800")
 
-            await (await deployed.tokamakOracle.connect(deployer).setFixedPrice(
-                priceTon, priceTos
+            await (await deployed.tokamakOracle.connect(deployer).setFixedTONPrice(
+                priceTon
                 )).wait()
 
             expect(await deployed.tokamakOracle.fixedPriceTONPerETH()).to.be.eq(
                 priceTon)
-            expect(await deployed.tokamakOracle.fixedPriceTOSPerETH()).to.be.eq(
-                priceTos)
+
 
         });
     })
