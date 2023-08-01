@@ -13,9 +13,9 @@ interface IIOracleLibrary {
         external view returns (uint256 amountOut);
 }
 
-contract TokamakOracle is Ownable, IOracle {
+contract TokamakOracle is IOracle {
     address public constant ovmGasOracle = 0x420000000000000000000000000000000000000F;
-
+    address public owner;
     address public oracleLibrary;
     address public uniswapV3Factory;
     address public ton;
@@ -26,8 +26,14 @@ contract TokamakOracle is Ownable, IOracle {
     // feeToken
     mapping(address => bytes[]) public pricePaths; // pricePathInfos must be ordering as 'weth - fee - ...- ton'
 
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ChangedPricePathInfo(address token, bytes[] poolPaths);
     event SetFixedTONPrice(uint256 amount);
+
+    modifier onlyOwner() {
+        _checkOwner();
+        _;
+    }
 
     modifier nonZeroAddress(address _addr) {
         require(_addr != address(0), "zero address");
@@ -39,8 +45,23 @@ contract TokamakOracle is Ownable, IOracle {
         _;
     }
 
-    constructor() {
+    constructor(address _ownerAddr) {
+        _transferOwnership(_ownerAddr);
     }
+
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
+    }
+
 
     function initialize(
         address _ton,
@@ -50,7 +71,6 @@ contract TokamakOracle is Ownable, IOracle {
         ton = _ton;
         oracleLibrary = _oracleLibrary;
         uniswapV3Factory = _uniswapV3Factory;
-
     }
 
     function setFixedTONPrice(
@@ -125,4 +145,21 @@ contract TokamakOracle is Ownable, IOracle {
         tokenInput = fixedPriceTONPerETH * ethOutput / 1e18;
     }
 
+    /**
+     * @dev Throws if the sender is not the owner.
+     */
+    function _checkOwner() internal view virtual {
+        require(owner == msg.sender, "Ownable: caller is not the owner");
+    }
+
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
 }

@@ -209,13 +209,12 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
 export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | Signer, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
   const provider = entryPoint?.provider
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
-  // console.log('op2', op2)
 
   const chainId = await provider!.getNetwork().then(net => net.chainId)
-  // console.log('chainId', chainId)
 
   const message = arrayify(getUserOpHash(op2, entryPoint!.address, chainId))
-  // console.log('message', message)
+
+  // let sign = await signer.signMessage(message)
 
   return {
     ...op2,

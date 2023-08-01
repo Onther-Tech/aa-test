@@ -69,7 +69,9 @@ export const tokamakFixtures = async function (): Promise<TokamakFixture> {
     const oracleLibrary = (await OracleLibrary_.connect(deployer).deploy()) as OracleLibrary;
 
     const TokamakOracle_ = await ethers.getContractFactory("TokamakOracle");
-    const tokamakOracle = (await TokamakOracle_.connect(deployer).deploy()) as TokamakOracle;
+    const tokamakOracle = (await TokamakOracle_.connect(deployer).deploy(
+      deployer.address
+    )) as TokamakOracle;
 
     // await (await tokamakOracle.initialize(tonAddress, oracleLibrary.address, uniswapV3FactoryAddress)).wait();
 

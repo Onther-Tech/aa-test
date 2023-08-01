@@ -97,7 +97,7 @@ const config: HardhatUserConfig = {
     },
     uniswapV3FactoryAddress: {
       default: 7,
-      hardhat: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
+      hardhat: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
       mainnet: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       goerli: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       titan: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
@@ -154,15 +154,21 @@ const config: HardhatUserConfig = {
       titan: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
       titangoerli: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
     },
+    tonHolder:
+      `privatekey://${process.env.PRIVATE_KEY}`,
+    user2Address:
+      `privatekey://${process.env.USER2_PRIVATE_KEY}`,
+    user3Address:
+      `privatekey://${process.env.USER3_PRIVATE_KEY}`,
   },
   networks: {
     hardhat: {
       forking: {
         url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
-        blockNumber: 20582
+        blockNumber: 21440
       },
       allowUnlimitedContractSize: false,
-      deploy: ['deploy']
+      // deploy: ['deploy']
     },
     dev: { url: 'http://localhost:8545' },
     // github action starts localgeth service, for gas calculations
@@ -174,12 +180,12 @@ const config: HardhatUserConfig = {
       url: `${process.env.ETH_NODE_URI_TITAN_MAINNET}`,
       accounts: [`${process.env.DEPLOYER}`],
       chainId: 55004,
-      gasPrice: 250000,
+      gasPrice: 1000000,
       deploy: ['deploy']
     },
-    titan_goerli: {
+    titangoerli: {
       url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
-      accounts: [`${process.env.DEPLOYER}`],
+      accounts: [`${process.env.PRIVATE_KEY}`],
       chainId: 5050,
       gasPrice: 250000,
       deploy: ['deploy']
