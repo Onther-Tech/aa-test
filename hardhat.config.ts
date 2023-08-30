@@ -170,9 +170,14 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: false,
       // deploy: ['deploy']
     },
-    dev: { url: 'http://localhost:8545' },
+    dev: {
+      url: 'http://localhost:8545',
+      deploy: ['deploy']
+   },
     // github action starts localgeth service, for gas calculations
-    localgeth: { url: 'http://localgeth:8545' },
+    localgeth: {
+      url: 'http://localgeth:8545'
+    },
     goerli: getNetwork('goerli'),
     sepolia: getNetwork('sepolia'),
     proxy: getNetwork1('http://localhost:8545'),
