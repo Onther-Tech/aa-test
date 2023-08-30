@@ -16,14 +16,6 @@ const {
 
 const entryPointJson = require("../artifacts/contracts/TokamakEntryPoint.sol/TokamakEntryPoint.dbg.json")
 const paymasterJson = require("../artifacts/contracts/TokamakPaymaster.sol/TokamakPaymaster.dbg.json")
-/*
-// ---- use case 0 ---
-// 1. L1 에서 L2로 디파짓과 함수호출을 동시에 한다.
-//    => 확인사항 L1에서 하나의 트랜잭션으로 구성할때, L2에서 순차적 실행이 보장되는가?
-// 1-1. L1에서 L2로 톤을 특정 주소 전송 depositERC20To
-// 1-2. L1에서 L1Message를 통해 특정 컨트랙의 함수를 호출, paymaster.depositTo
-//
-*/
 
 // ---- use case 1 ---
 // 사전 작업 1. paymaster는 entryPoint에 이더를 예치해야 한다.
@@ -33,6 +25,7 @@ const paymasterJson = require("../artifacts/contracts/TokamakPaymaster.sol/Tokam
 // 1-1. user2Contract 계정에서 ton.approve(paymaster, max)
 // 1-2. user2Contract 계정에서 ton.approve(swapRouter, max)
 // 1-3. user2Contract 계정에서 swapRouter.multicall(exactInputSingle, unwrapWETH9)
+// ==> approve와 swap을 동시에 요청할때 swap에서 실패함. 따로 처리해야 성공함.
 
 async function approveCalldata(SwapRouterContract, TONContract, PaymasterContract,
   TONAddress, WETHAddress, SwapRouterAddress, deadline, swapTonAmountIn, receiverAddress,
