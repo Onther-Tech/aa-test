@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import { OnApprove } from "../interfaces/OnApprove.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 interface L1CrossDomainMessengerI {
     function sendMessage(
@@ -54,7 +54,10 @@ contract L1toL2DepositAndMessage is ERC165Storage{
         uint256 amount,
         bytes calldata data
     ) public returns (bool) {
-        require(sender == ton, 'sender is not TON contract');
+        console.log('sender %s', sender);
+        console.log('spender %s', spender);
+        console.log('amount %s', amount);
+        require(msg.sender == ton, 'caller is not TON');
         // data :
         // 20 bytes addressManager,
         // 20 bytes l1Token,

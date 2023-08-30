@@ -163,9 +163,13 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      // forking: {
+      //   url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
+      //   blockNumber: 21440
+      // },
       forking: {
-        url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
-        blockNumber: 21440
+        url: `${process.env.ETH_NODE_URI_GOERLI}`,
+        blockNumber: 9604626
       },
       allowUnlimitedContractSize: false,
       // deploy: ['deploy']
@@ -173,7 +177,13 @@ const config: HardhatUserConfig = {
     dev: { url: 'http://localhost:8545' },
     // github action starts localgeth service, for gas calculations
     localgeth: { url: 'http://localgeth:8545' },
-    goerli: getNetwork('goerli'),
+    // goerli: getNetwork('goerli'),
+    goerli: {
+      url: `${process.env.ETH_NODE_URI_GOERLI}`,
+      accounts: [`${process.env.DEPLOYER}`],
+      // chainId: 5,
+      deploy: ['deploy_l1']
+    },
     sepolia: getNetwork('sepolia'),
     proxy: getNetwork1('http://localhost:8545'),
     titan: {
