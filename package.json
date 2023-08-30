@@ -12,6 +12,8 @@
   "license": "ISC",
   "devDependencies": {
     "@account-abstraction/contracts": "0.6.0",
+    "@account-abstraction/sdk": "^0.4.0",
+    "@account-abstraction/utils": "^0.4.0",
     "@ethersproject/providers": "^5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",

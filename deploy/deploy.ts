@@ -71,6 +71,17 @@ const deployTokamakAccountAbstraction: DeployFunction = async function (hre: Har
     deterministicDeployment: true
   })
   const tokamakOracle = await hre.deployments.get('TokamakOracle')
+
+  // const TokamakPaymaster_ = await hre.deployments.deploy('TokamakPaymaster', {
+  //   from,
+  //   args: [
+  //     tokamakEntryPointAddress,
+  //   ],
+  //   gasLimit: 1e7,
+  //   log: true,
+  //   deterministicDeployment: true
+  // })
+  // console.log('TokamakPaymaster_ address:', TokamakPaymaster_.address)
   /*
   const tokamakOracleContract = await hre.ethers.getContractAt(
     TokamakOracle_.abi,

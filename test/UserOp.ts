@@ -11,7 +11,8 @@ import {
   EntryPoint
 } from '../typechain'
 import { UserOperation } from './UserOperation'
-// import { Create2Factory } from '../src/Create2Factory'
+// import { Create2Factory } from '../src/Create2Factory
+import { calcPreVerificationGas } from '@account-abstraction/sdk'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
   if (forSignature) {
@@ -126,6 +127,8 @@ export function fillUserOpDefaults (op: Partial<UserOperation>, defaults = Defau
 // callGasLimit: VERY crude estimation (by estimating call to account, and add rough entryPoint overhead
 // verificationGasLimit: hard-code default at 100k. should add "create2" cost
 export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
+
+
   const op1 = { ...op }
   const provider = entryPoint?.provider
   if (op.initCode != null) {
@@ -166,15 +169,16 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
     const c = new Contract(op.sender!, [`function ${getNonceFunction}() view returns(uint256)`], provider)
     op1.nonce = await c[getNonceFunction]().catch(rethrow())
   }
-  // console.log('op1.nonce', op1.nonce)
 
   if (op1.callGasLimit == null && op.callData != null) {
     if (provider == null) throw new Error('must have entryPoint for callGasLimit estimate')
+
     let gasEtimated = await provider.estimateGas({
       from: entryPoint?.address,
       to: op1.sender,
       data: op1.callData
     })
+
 
     // console.log('estim', op1.sender,'len=', op1.callData!.length, 'res=', gasEtimated)
     // estimateGas assumes direct call from entryPoint. add wrapper cost.
@@ -194,19 +198,21 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
     op1.maxPriorityFeePerGas = DefaultsForUserOp.maxPriorityFeePerGas
   }
 
-  // console.log('op1', op1)
-
-
   const op2 = fillUserOpDefaults(op1)
+  // we do not want to use default value of preVerificationGas
+  op2.preVerificationGas = 0
+  
   // eslint-disable-next-line @typescript-eslint/no-base-to-string
   if (op2.preVerificationGas.toString() === '0') {
     // TODO: we don't add overhead, which is ~21000 for a single TX, but much lower in a batch.
-    op2.preVerificationGas = callDataCost(packUserOp(op2, false))
+    // op2.preVerificationGas = callDataCost(packUserOp(op2, false))
+    op2.preVerificationGas = calcPreVerificationGas(op2)
   }
   return op2
 }
 
 export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | Signer, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
+
   const provider = entryPoint?.provider
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
 
