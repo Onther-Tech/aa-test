@@ -71,7 +71,7 @@ const deployTokamakAccountAbstraction: DeployFunction = async function (hre: Har
     deterministicDeployment: true
   })
   const tokamakOracle = await hre.deployments.get('TokamakOracle')
-  /*
+
   const tokamakOracleContract = await hre.ethers.getContractAt(
     TokamakOracle_.abi,
     tokamakOracle.address,
@@ -79,7 +79,8 @@ const deployTokamakAccountAbstraction: DeployFunction = async function (hre: Har
     );
 
   let tonAddr = await tokamakOracleContract.ton()
-
+  console.log('tonAddr', tonAddr)
+  console.log('tonAddress', tonAddress)
   if (tonAddr != tonAddress) {
     await (await tokamakOracleContract.connect(deployer).initialize(
       tonAddress,
@@ -94,7 +95,7 @@ const deployTokamakAccountAbstraction: DeployFunction = async function (hre: Har
       tonPriceETH
       )).wait()
   }
-  */
+
 
 }
 

@@ -78,6 +78,7 @@ const config: HardhatUserConfig = {
       goerli: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
       titan: '0x4200000000000000000000000000000000000006',
       titangoerli: '0x4200000000000000000000000000000000000006',
+      titan_goerli_nightly: '0x4200000000000000000000000000000000000006'
     },
     tonAddress: {
       default: 5,
@@ -86,6 +87,7 @@ const config: HardhatUserConfig = {
       goerli: '0x68c1F9620aeC7F2913430aD6daC1bb16D8444F00',
       titan: '0x7c6b91D9Be155A6Db01f749217d76fF02A7227F2',
       titangoerli: '0xfa956eb0c4b3e692ad5a6b2f08170ade55999aca',
+      titan_goerli_nightly: '0x7c6b91D9Be155A6Db01f749217d76fF02A7227F2',
     },
     tosAddress: {
       default: 6,
@@ -94,6 +96,7 @@ const config: HardhatUserConfig = {
       goerli: '0x67F3bE272b1913602B191B3A68F7C238A2D81Bb9',
       titan: '0xD08a2917653d4E460893203471f0000826fb4034',
       titangoerli: '0x6AF3cb766D6cd37449bfD321D961A61B0515c1BC',
+      titan_goerli_nightly: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
     },
     uniswapV3FactoryAddress: {
       default: 7,
@@ -102,6 +105,7 @@ const config: HardhatUserConfig = {
       goerli: '0x1F98431c8aD98523631AE4a59f267346ea31F984',
       titan: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
       titangoerli: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
+      titan_goerli_nightly: '0x8C2351935011CfEccA4Ea08403F127FB782754AC',
     },
     l1MessengerAddress: {
       default: 8,
@@ -113,6 +117,7 @@ const config: HardhatUserConfig = {
       titan: '0x4200000000000000000000000000000000000007',
       titan_goerli: '0x4200000000000000000000000000000000000007',
       hardhat: '0x4200000000000000000000000000000000000007',
+      titan_goerli_nightly: '0x4200000000000000000000000000000000000007'
     },
     l1BridgeAddress: {
       default: 10,
@@ -124,6 +129,7 @@ const config: HardhatUserConfig = {
       titan: '0x4200000000000000000000000000000000000010',
       titan_goerli: '0x4200000000000000000000000000000000000010',
       hardhat: '0x4200000000000000000000000000000000000010',
+      titan_goerli_nightly: '0x4200000000000000000000000000000000000010'
     },
     l1AddressManagerAddress: {
       default: 12,
@@ -137,6 +143,7 @@ const config: HardhatUserConfig = {
       goerli: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
       titan: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
       titangoerli: '0xc1eba383D94c6021160042491A5dfaF1d82694E6',
+      titan_goerli_nightly: '0xc1eba383D94c6021160042491A5dfaF1d82694E6'
     },
     quoterV2Address: {
       default: 14,
@@ -153,6 +160,7 @@ const config: HardhatUserConfig = {
       goerli: '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
       titan: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
       titangoerli: '0x1316822b9d2EEF86a925b753e8854F24761dA80E',
+      titan_goerli_nightly: '0x1316822b9d2EEF86a925b753e8854F24761dA80E'
     },
     tonHolder:
       `privatekey://${process.env.PRIVATE_KEY}`,
@@ -164,8 +172,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `${process.env.ETH_NODE_URI_TITAN_GOERLI}`,
-        blockNumber: 21440
+        url: `${process.env.ETH_NODE_URI_TITAN_GOERLI_NIGHTLY}`,
+        blockNumber: 1395
       },
       allowUnlimitedContractSize: false,
       // deploy: ['deploy']
@@ -195,6 +203,13 @@ const config: HardhatUserConfig = {
       gasPrice: 250000,
       deploy: ['deploy']
     },
+    titan_goerli_nightly: {
+      url: `${process.env.ETH_NODE_URI_TITAN_GOERLI_NIGHTLY}`,
+      accounts: [`${process.env.PRIVATE_KEY}`],
+      chainId: 5051,
+      gasPrice: 250000,
+      deploy: ['deploy']
+    },
   },
   deterministicDeployment: (network: string) => {
     // Skip on hardhat's local network.
@@ -215,16 +230,25 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       goerli: `${process.env.ETHERSCAN_API_KEY}`,
+      "titan_goerli_nightly":"verify",
       "titangoerli":"verify",
       "titan":"verify"
     } ,
     customChains: [
       {
+        network: "titan_goerli_nightly",
+        chainId: 5051,
+        urls: {
+          apiURL: "https://explorer.titan-goerli-nightly.tokamak.network/api",
+          browserURL: "https://explorer.titan-goerli-nightly.tokamak.network"
+        }
+      },
+      {
         network: "titangoerli",
         chainId: 5050,
         urls: {
-          apiURL: "https://goerli.explorer.tokamak.network/api",
-          browserURL: "https://goerli.explorer.tokamak.network"
+          apiURL: "https://explorer.titan-goerli.tokamak.network/api",
+          browserURL: "https://explorer.titan-goerli.tokamak.network"
         }
       },
       {
