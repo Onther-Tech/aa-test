@@ -123,6 +123,7 @@ const getContract = async (contractName) => {
   );
   let contractAddress = contractAddresses[contractName];
   let contractCode = await providers.getCode(contractAddress);
+
   if (contractCode === '0x') {
     console.log(contractName + 'Contract Code is null, exit');
     process.exit();
